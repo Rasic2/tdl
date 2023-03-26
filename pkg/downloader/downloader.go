@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gotd/td/telegram/downloader"
@@ -14,10 +19,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const TempExt = ".tmp"
@@ -123,6 +124,7 @@ func (d *Downloader) download(ctx context.Context, item *Item) error {
 		if stat, err := os.Stat(filepath.Join(d.dir, item.Name)); err == nil {
 			if utils.FS.GetNameWithoutExt(item.Name) == utils.FS.GetNameWithoutExt(stat.Name()) &&
 				stat.Size() == item.Size {
+				color.Blue("%s			continue", stat.Name())
 				return nil
 			}
 		}
