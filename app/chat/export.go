@@ -115,14 +115,17 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 		for iter.Next(ctx) {
 			msg := iter.Value()
 
-			// Count the emoji numbers
+			// Count the emoji numbers, filter by type and emoji_count
 			mm, ok := msg.Msg.(*tg.Message)
 			mr, ok := mm.GetReactions()
 			emoji_count := 0
 			for _, value := range mr.Results {
 				emoji_count += value.Count
 			}
-			// fmt.Println(emoji_count)
+
+			if media, ok := mm.GetMedia(); ok && media.TypeName() == "messageMediaDocument" && emoji_count <= 30 {
+				continue
+			}
 
 			switch opts.Type {
 			case ExportTypeTime:
