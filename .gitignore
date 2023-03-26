@@ -6,3 +6,4 @@ downloads
 *.exe
 *.zip
 tdl
+tdl-export.json

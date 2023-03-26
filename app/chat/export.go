@@ -3,6 +3,10 @@ package chat
 import (
 	"context"
 	"fmt"
+	"os"
+	"regexp"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/go-faster/jx"
 	"github.com/gotd/contrib/middleware/ratelimit"
@@ -17,9 +21,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"go.uber.org/multierr"
 	"golang.org/x/time/rate"
-	"os"
-	"regexp"
-	"time"
 )
 
 const (
@@ -113,6 +114,16 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 	loop:
 		for iter.Next(ctx) {
 			msg := iter.Value()
+
+			// Count the emoji numbers
+			mm, ok := msg.Msg.(*tg.Message)
+			mr, ok := mm.GetReactions()
+			emoji_count := 0
+			for _, value := range mr.Results {
+				emoji_count += value.Count
+			}
+			// fmt.Println(emoji_count)
+
 			switch opts.Type {
 			case ExportTypeTime:
 				if msg.Msg.GetDate() < opts.Input[0] {
@@ -144,6 +155,7 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 				e.Field("type", func(e *jx.Encoder) { e.Str("message") })
 				// just a placeholder
 				e.Field("file", func(e *jx.Encoder) { e.Str("0") })
+				e.Field("emoji_count", func(e *jx.Encoder) { e.Int(emoji_count) })
 			})
 
 			count++
