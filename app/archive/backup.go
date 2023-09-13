@@ -2,16 +2,19 @@ package archive
 
 import (
 	"context"
-	"github.com/fatih/color"
-	"github.com/iyear/tdl/pkg/consts"
-	"github.com/mholt/archiver/v4"
 	"os"
+
+	"github.com/fatih/color"
+	"github.com/go-faster/errors"
+	"github.com/mholt/archiver/v4"
+
+	"github.com/iyear/tdl/pkg/consts"
 )
 
 func Backup(ctx context.Context, dst string) error {
 	f, err := os.Create(dst)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "create file")
 	}
 	defer func(f *os.File) {
 		_ = f.Close()
@@ -21,7 +24,7 @@ func Backup(ctx context.Context, dst string) error {
 		consts.KVPath: "",
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "walk files")
 	}
 
 	format := archiver.Zip{}

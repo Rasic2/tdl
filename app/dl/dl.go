@@ -5,9 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/gotd/contrib/middleware/floodwait"
+	"github.com/spf13/viper"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
+
 	"github.com/iyear/tdl/app/internal/dliter"
 	"github.com/iyear/tdl/app/internal/tgc"
 	"github.com/iyear/tdl/pkg/consts"
@@ -16,11 +21,6 @@ import (
 	"github.com/iyear/tdl/pkg/key"
 	"github.com/iyear/tdl/pkg/kv"
 	"github.com/iyear/tdl/pkg/logger"
-	"github.com/jedib0t/go-pretty/v6/text"
-	"github.com/spf13/viper"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-	"time"
 )
 
 type Options struct {
@@ -33,7 +33,7 @@ type Options struct {
 	Include    []string
 	Exclude    []string
 	Desc       bool
-	PoolSize   int64
+	Takeout    bool
 
 	// resume opts
 	Continue, Restart bool
@@ -51,18 +51,8 @@ func Run(ctx context.Context, opts *Options) error {
 	}
 
 	return tgc.RunWithAuth(ctx, c, func(ctx context.Context) (rerr error) {
-		color.Green("Preparing DC pool... It may take a while. size: %d", opts.PoolSize)
-
-		start := time.Now()
-		pool, err := dcpool.NewPool(ctx, c, opts.PoolSize, floodwait.NewSimpleWaiter())
-		if err != nil {
-			return err
-		}
+		pool := dcpool.NewPool(c, int64(viper.GetInt(consts.FlagPoolSize)), floodwait.NewSimpleWaiter())
 		defer multierr.AppendInvoke(&rerr, multierr.Close(pool))
-
-		// clear prepare message
-		fmt.Printf("%s%s", text.CursorUp.Sprint(), text.EraseLine.Sprint())
-		color.Green("DC pool prepared in %s", time.Since(start))
 
 		parsers := []parser{
 			{Data: opts.URLs, Parser: parseURLs},
@@ -75,7 +65,7 @@ func Run(ctx context.Context, opts *Options) error {
 		logger.From(ctx).Debug("Collect dialogs",
 			zap.Any("dialogs", dialogs))
 
-		iter, err := dliter.New(&dliter.Options{
+		iter, err := dliter.New(ctx, &dliter.Options{
 			Pool:     pool,
 			KV:       kvd,
 			Template: opts.Template,
@@ -105,7 +95,7 @@ func Run(ctx context.Context, opts *Options) error {
 			}
 		}()
 
-		options := &downloader.Options{
+		options := downloader.Options{
 			Pool:       pool,
 			Dir:        opts.Dir,
 			RewriteExt: opts.RewriteExt,
@@ -113,6 +103,7 @@ func Run(ctx context.Context, opts *Options) error {
 			PartSize:   viper.GetInt(consts.FlagPartSize),
 			Threads:    viper.GetInt(consts.FlagThreads),
 			Iter:       iter,
+			Takeout:    opts.Takeout,
 		}
 		limit := viper.GetInt(consts.FlagLimit)
 

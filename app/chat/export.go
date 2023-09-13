@@ -2,9 +2,9 @@ package chat
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
 	"time"
 
 	"github.com/fatih/color"
@@ -12,15 +12,18 @@ import (
 	"github.com/gotd/contrib/middleware/ratelimit"
 	"github.com/gotd/td/telegram/peers"
 	"github.com/gotd/td/telegram/query"
+	"github.com/gotd/td/telegram/query/messages"
 	"github.com/gotd/td/tg"
-	"github.com/iyear/tdl/app/internal/tgc"
-	"github.com/iyear/tdl/pkg/prog"
-	"github.com/iyear/tdl/pkg/storage"
-	"github.com/iyear/tdl/pkg/tmedia"
-	"github.com/iyear/tdl/pkg/utils"
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"go.uber.org/multierr"
 	"golang.org/x/time/rate"
+
+	"github.com/iyear/tdl/app/internal/tgc"
+	"github.com/iyear/tdl/pkg/prog"
+	"github.com/iyear/tdl/pkg/storage"
+	"github.com/iyear/tdl/pkg/texpr"
+	"github.com/iyear/tdl/pkg/tmedia"
+	"github.com/iyear/tdl/pkg/utils"
 )
 
 const (
@@ -29,11 +32,24 @@ const (
 )
 
 type ExportOptions struct {
-	Type   string
-	Chat   string
-	Input  []int
-	Output string
-	Filter map[string]string
+	Type        string
+	Chat        string
+	Thread      int // topic id in forum, message id in group
+	Input       []int
+	Output      string
+	Filter      string
+	OnlyMedia   bool
+	WithContent bool
+	Raw         bool
+	All         bool
+}
+
+type Message struct {
+	ID   int    `json:"id"`
+	Type string `json:"type"`
+	File string `json:"file"`
+	Date int    `json:"date,omitempty"`
+	Text string `json:"text,omitempty"`
 }
 
 const (
@@ -42,24 +58,41 @@ const (
 	ExportTypeLast string = "last"
 )
 
-var Filters = []string{FilterFile, FilterContent}
-
-const (
-	FilterFile    = "file"
-	FilterContent = "content"
-)
-
 func Export(ctx context.Context, opts *ExportOptions) error {
 	c, kvd, err := tgc.NoLogin(ctx, ratelimit.New(rate.Every(rateInterval), rateBucket))
 	if err != nil {
 		return err
 	}
 
-	return tgc.RunWithAuth(ctx, c, func(ctx context.Context) (rerr error) {
-		manager := peers.Options{Storage: storage.NewPeers(kvd)}.Build(c.API())
-		peer, err := utils.Telegram.GetInputPeer(ctx, manager, opts.Chat)
+	// only output available fields
+	if opts.Filter == "-" {
+		fg := texpr.NewFieldsGetter(nil)
+
+		fields, err := fg.Walk(&message{})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to walk fields: %w", err)
+		}
+
+		fmt.Print(fg.Sprint(fields, true))
+		return nil
+	}
+
+	filter, err := texpr.Compile(opts.Filter)
+	if err != nil {
+		return fmt.Errorf("failed to compile filter: %w", err)
+	}
+
+	return tgc.RunWithAuth(ctx, c, func(ctx context.Context) (rerr error) {
+		var peer peers.Peer
+
+		manager := peers.Options{Storage: storage.NewPeers(kvd)}.Build(c.API())
+		if opts.Chat == "" { // defaults to me(saved messages)
+			peer, err = manager.Self(ctx)
+		} else {
+			peer, err = utils.Telegram.GetInputPeer(ctx, manager, opts.Chat)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to get peer: %w", err)
 		}
 
 		color.Yellow("WARN: Export only generates minimal JSON for tdl download, not for backup.")
@@ -78,17 +111,22 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 
 		go pw.Render()
 
-		batchSize := 100
-		builder := query.Messages(c.API()).GetHistory(peer.InputPeer()).BatchSize(batchSize)
+		var q messages.Query
+		switch {
+		case opts.Thread != 0: // topic messages, reply messages
+			q = query.NewQuery(c.API()).Messages().GetReplies(peer.InputPeer()).MsgID(opts.Thread)
+		default: // history
+			q = query.NewQuery(c.API()).Messages().GetHistory(peer.InputPeer())
+		}
+		iter := messages.NewIterator(q, 100)
+
 		switch opts.Type {
 		case ExportTypeTime:
-			builder = builder.OffsetDate(opts.Input[1] + 1)
+			iter = iter.OffsetDate(opts.Input[1] + 1)
 		case ExportTypeID:
-			builder = builder.OffsetID(opts.Input[1] + 1) // #89: retain the last msg id
+			iter = iter.OffsetID(opts.Input[1] + 1) // #89: retain the last msg id
 		case ExportTypeLast:
-			//builder = builder.OffsetID()
 		}
-		iter := builder.Iter()
 
 		f, err := os.Create(opts.Output)
 		if err != nil {
@@ -99,17 +137,30 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 		enc := jx.NewStreamingEncoder(f, 512)
 		defer multierr.AppendInvoke(&rerr, multierr.Close(enc))
 
+		// process thread is reply type and peer is broadcast channel,
+		// so we need to set discussion group id instead of broadcast id
+		id := peer.ID()
+		if p, ok := peer.(peers.Channel); opts.Thread != 0 && ok && p.IsBroadcast() {
+			bc, _ := p.ToBroadcast()
+			raw, err := bc.FullRaw(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to get broadcast full raw: %w", err)
+			}
+
+			if id, ok = raw.GetLinkedChatID(); !ok {
+				return fmt.Errorf("no linked group")
+			}
+		}
+
 		enc.ObjStart()
 		defer enc.ObjEnd()
-		enc.Field("id", func(e *jx.Encoder) { e.Int64(peer.ID()) })
+		enc.Field("id", func(e *jx.Encoder) { e.Int64(id) })
 
 		enc.FieldStart("messages")
 		enc.ArrStart()
 		defer enc.ArrEnd()
 
 		count := int64(0)
-		re := regexpGroup(opts.Filter)
-		color.Blue("Filters: %v", re)
 
 	loop:
 		for iter.Next(ctx) {
@@ -143,23 +194,55 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 			}
 
 			m, ok := msg.Msg.(*tg.Message)
-			// filter by message content
-			if !ok || !re[FilterContent].MatchString(m.Message) {
+			if !ok {
+				continue
+			}
+			// only get media messages
+			media, ok := tmedia.GetMedia(m)
+			if !ok && !opts.All {
 				continue
 			}
 
-			// filter by file name
-			if md, ok := tmedia.GetMedia(m); !ok || !re[FilterFile].MatchString(md.Name) {
+			b, err := texpr.Run(filter, covertMessage(m))
+			if err != nil {
+				return fmt.Errorf("failed to run filter: %w", err)
+			}
+			if !b.(bool) { // filtered
 				continue
 			}
 
-			enc.Obj(func(e *jx.Encoder) {
-				e.Field("id", func(e *jx.Encoder) { e.Int(m.ID) })
-				e.Field("type", func(e *jx.Encoder) { e.Str("message") })
+		//	enc.Obj(func(e *jx.Encoder) {
+		//		e.Field("id", func(e *jx.Encoder) { e.Int(m.ID) })
+		//		e.Field("type", func(e *jx.Encoder) { e.Str("message") })
 				// just a placeholder
-				e.Field("file", func(e *jx.Encoder) { e.Str("0") })
-				e.Field("emoji_count", func(e *jx.Encoder) { e.Int(emoji_count) })
-			})
+		//		e.Field("file", func(e *jx.Encoder) { e.Str("0") })
+		//		e.Field("emoji_count", func(e *jx.Encoder) { e.Int(emoji_count) })
+		//	})
+			var jsonMessage any
+			if opts.Raw {
+				jsonMessage = m
+			} else {
+				fileName := ""
+				if media != nil { // #207
+					fileName = media.Name
+				}
+				t := &Message{
+					ID:   m.ID,
+					Type: "message",
+					File: fileName,
+				}
+				if opts.WithContent {
+					t.Date = m.Date
+					t.Text = m.Message
+				}
+				jsonMessage = t
+			}
+
+			mb, err := json.Marshal(jsonMessage)
+			if err != nil {
+				return fmt.Errorf("failed to marshal message: %w", err)
+			}
+			enc.Raw(mb)
 
 			count++
 			tracker.SetValue(count)
@@ -170,27 +253,7 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 		}
 
 		tracker.MarkAsDone()
-		for pw.IsRenderInProgress() {
-			if pw.LengthActive() == 0 {
-				pw.Stop()
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
-
+		prog.Wait(pw)
 		return nil
 	})
-}
-
-// regexpGroup returns a map of regexp.Regexp. If the value is not a valid regexp, it will be replaced with a regexp that matches everything.
-func regexpGroup(m map[string]string) map[string]*regexp.Regexp {
-	r := make(map[string]*regexp.Regexp)
-	for k, v := range m {
-		re, err := regexp.Compile(v)
-		if err != nil {
-			r[k] = regexp.MustCompile(".*")
-			continue
-		}
-		r[k] = re
-	}
-	return r
 }

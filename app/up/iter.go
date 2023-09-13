@@ -3,11 +3,15 @@ package up
 import (
 	"context"
 	"fmt"
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/iyear/tdl/pkg/uploader"
-	"github.com/iyear/tdl/pkg/utils"
 	"os"
 	"path/filepath"
+
+	"github.com/gabriel-vasile/mimetype"
+	"go.uber.org/zap"
+
+	"github.com/iyear/tdl/pkg/logger"
+	"github.com/iyear/tdl/pkg/uploader"
+	"github.com/iyear/tdl/pkg/utils"
 )
 
 type file struct {
@@ -16,14 +20,16 @@ type file struct {
 }
 
 type iter struct {
-	files []*file
-	cur   int
+	files  []*file
+	cur    int
+	remove bool
 }
 
-func newIter(files []*file) *iter {
+func newIter(files []*file, remove bool) *iter {
 	return &iter{
-		files: files,
-		cur:   -1,
+		files:  files,
+		cur:    -1,
+		remove: remove,
 	}
 }
 
@@ -36,11 +42,7 @@ func (i *iter) Next(ctx context.Context) bool {
 
 	i.cur++
 
-	if i.cur == len(i.files) {
-		return false
-	}
-
-	return true
+	return i.cur != len(i.files)
 }
 
 func (i *iter) Value(ctx context.Context) (*uploader.Item, error) {
@@ -81,6 +83,7 @@ func (i *iter) Value(ctx context.Context) (*uploader.Item, error) {
 	}
 
 	return &uploader.Item{
+		ID:    i.cur,
 		File:  f,
 		Thumb: thumb,
 		Name:  filepath.Base(f.Name()),
@@ -91,4 +94,17 @@ func (i *iter) Value(ctx context.Context) (*uploader.Item, error) {
 
 func (i *iter) Total(_ context.Context) int {
 	return len(i.files)
+}
+
+func (i *iter) Finish(ctx context.Context, id int) {
+	if !i.remove {
+		return
+	}
+
+	l := logger.From(ctx)
+	if err := os.Remove(i.files[id].file); err != nil {
+		l.Error("remove file failed", zap.Error(err))
+		return
+	}
+	l.Info("remove file success", zap.String("file", i.files[id].file))
 }

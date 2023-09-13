@@ -3,20 +3,22 @@ package dl
 import (
 	"context"
 	"errors"
+	"io"
+	"os"
+	"strconv"
+
 	"github.com/bcicen/jstream"
 	"github.com/gotd/td/telegram/peers"
 	"github.com/gotd/td/tg"
+	"github.com/mitchellh/mapstructure"
+	"go.uber.org/zap"
+
 	"github.com/iyear/tdl/app/internal/dliter"
 	"github.com/iyear/tdl/pkg/dcpool"
 	"github.com/iyear/tdl/pkg/kv"
 	"github.com/iyear/tdl/pkg/logger"
 	"github.com/iyear/tdl/pkg/storage"
 	"github.com/iyear/tdl/pkg/utils"
-	"github.com/mitchellh/mapstructure"
-	"go.uber.org/zap"
-	"io"
-	"os"
-	"strconv"
 )
 
 const (
@@ -39,7 +41,7 @@ func parseFiles(ctx context.Context, pool dcpool.Pool, kvd kv.KV, files []string
 	dialogs := make([]*dliter.Dialog, 0, len(files))
 
 	for _, file := range files {
-		d, err := parseFile(ctx, pool.Client(pool.Default()), kvd, file)
+		d, err := parseFile(ctx, pool.Client(ctx, pool.Default()), kvd, file)
 		if err != nil {
 			return nil, err
 		}

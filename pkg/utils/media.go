@@ -2,9 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"github.com/yapingcat/gomedia/go-mp4"
 	"io"
 	"strings"
+
+	"github.com/yapingcat/gomedia/go-mp4"
 )
 
 type media struct{}
@@ -15,7 +16,7 @@ func (m media) split(mime string) (primary string, sub string, ok bool) {
 	types := strings.Split(mime, "/")
 
 	if len(types) != 2 {
-		return
+		return "", "", false
 	}
 
 	return types[0], types[1], true

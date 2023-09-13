@@ -2,19 +2,21 @@ package dl
 
 import (
 	"context"
+
 	"github.com/gotd/td/telegram/peers"
+	"go.uber.org/zap"
+
 	"github.com/iyear/tdl/app/internal/dliter"
 	"github.com/iyear/tdl/pkg/dcpool"
 	"github.com/iyear/tdl/pkg/kv"
 	"github.com/iyear/tdl/pkg/logger"
 	"github.com/iyear/tdl/pkg/storage"
 	"github.com/iyear/tdl/pkg/utils"
-	"go.uber.org/zap"
 )
 
 func parseURLs(ctx context.Context, pool dcpool.Pool, kvd kv.KV, urls []string) ([]*dliter.Dialog, error) {
 	manager := peers.Options{Storage: storage.NewPeers(kvd)}.
-		Build(pool.Client(pool.Default()))
+		Build(pool.Client(ctx, pool.Default()))
 	msgMap := make(map[int64]*dliter.Dialog)
 
 	for _, u := range urls {

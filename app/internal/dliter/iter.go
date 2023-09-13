@@ -5,20 +5,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
+	"text/template"
+	"time"
+
 	"github.com/gotd/td/telegram/peers"
 	"github.com/gotd/td/telegram/query"
 	"github.com/gotd/td/tg"
+
 	"github.com/iyear/tdl/pkg/downloader"
 	"github.com/iyear/tdl/pkg/storage"
 	"github.com/iyear/tdl/pkg/tmedia"
 	"github.com/iyear/tdl/pkg/tplfunc"
 	"github.com/iyear/tdl/pkg/utils"
-	"path/filepath"
-	"text/template"
-	"time"
 )
 
-func New(opts *Options) (*Iter, error) {
+func New(ctx context.Context, opts *Options) (*Iter, error) {
 	tpl, err := template.New("dl").
 		Funcs(tplfunc.FuncMap(tplfunc.All...)).
 		Parse(opts.Template)
@@ -39,7 +41,7 @@ func New(opts *Options) (*Iter, error) {
 	// to keep fingerprint stable
 	sortDialogs(dialogs, opts.Desc)
 
-	manager := peers.Options{Storage: storage.NewPeers(opts.KV)}.Build(opts.Pool.Client(opts.Pool.Default()))
+	manager := peers.Options{Storage: storage.NewPeers(opts.KV)}.Build(opts.Pool.Client(ctx, opts.Pool.Default()))
 	it := &Iter{
 		pool:        opts.Pool,
 		dialogs:     dialogs,
@@ -86,7 +88,7 @@ func (iter *Iter) Next(ctx context.Context) (*downloader.Item, error) {
 func (iter *Iter) item(ctx context.Context, i, j int) (*downloader.Item, error) {
 	peer, msg := iter.dialogs[i].Peer, iter.dialogs[i].Messages[j]
 
-	it := query.Messages(iter.pool.Client(iter.pool.Default())).
+	it := query.Messages(iter.pool.Client(ctx, iter.pool.Default())).
 		GetHistory(peer).OffsetID(msg + 1).
 		BatchSize(1).Iter()
 	id := utils.Telegram.GetInputPeerID(peer)
@@ -108,7 +110,7 @@ func (iter *Iter) item(ctx context.Context, i, j int) (*downloader.Item, error) 
 
 	item, ok := tmedia.GetMedia(message)
 	if !ok {
-		return nil, fmt.Errorf("can not get item info: %d/%d",
+		return nil, fmt.Errorf("can not get media from %d/%d message",
 			id, message.ID)
 	}
 
