@@ -28,7 +28,10 @@ func New(ctx context.Context, opts *Options) (*Iter, error) {
 		return nil, err
 	}
 
+	// fmt.Println(opts.Dialogs[1][0].Messages)
 	dialogs := collectDialogs(opts.Dialogs)
+	// fmt.Println(dialogs[0].Messages)
+
 	// if msgs is empty, return error to avoid range out of index
 	if len(dialogs) == 0 {
 		return nil, fmt.Errorf("you must specify at least one message")
@@ -39,7 +42,10 @@ func New(ctx context.Context, opts *Options) (*Iter, error) {
 	excludeMap := filterMap(opts.Exclude, utils.FS.AddPrefixDot)
 
 	// to keep fingerprint stable
-	sortDialogs(dialogs, opts.Desc)
+	if opts.Desc {
+		sortDialogs(dialogs, opts.Desc)
+	}
+	// fmt.Println(dialogs[0].Messages) # 被迫排序
 
 	manager := peers.Options{Storage: storage.NewPeers(opts.KV)}.Build(opts.Pool.Client(ctx, opts.Pool.Default()))
 	it := &Iter{

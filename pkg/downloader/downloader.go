@@ -59,6 +59,7 @@ func (d *Downloader) Download(ctx context.Context, limit int) error {
 	go d.pw.Render()
 
 	wg, errctx := errgroup.WithContext(ctx)
+	// fmt.Println(wg)
 	wg.SetLimit(limit)
 
 	for i := 0; i < total; i++ {

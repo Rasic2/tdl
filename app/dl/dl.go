@@ -59,6 +59,7 @@ func Run(ctx context.Context, opts *Options) error {
 			{Data: opts.Files, Parser: parseFiles},
 		}
 		dialogs, err := collectDialogs(ctx, pool, kvd, parsers)
+		// fmt.Println(dialogs[1][0].Messages)
 		if err != nil {
 			return err
 		}
@@ -123,11 +124,16 @@ func collectDialogs(ctx context.Context, pool dcpool.Pool, kvd kv.KV, parsers []
 	var dialogs [][]*dliter.Dialog
 	for _, p := range parsers {
 		d, err := p.Parser(ctx, pool, kvd, p.Data)
+		// fmt.Println(p.Data)
 		if err != nil {
 			return nil, err
 		}
+		// if len(d) !=0 {
+		// 	fmt.Println(d[0].Messages)
+		// }
 		dialogs = append(dialogs, d)
 	}
+	// fmt.Println(dialogs)
 	return dialogs, nil
 }
 

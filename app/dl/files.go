@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	// "fmt"
 
 	"github.com/bcicen/jstream"
 	"github.com/gotd/td/telegram/peers"
@@ -50,6 +51,7 @@ func parseFiles(ctx context.Context, pool dcpool.Pool, kvd kv.KV, files []string
 			zap.String("file", file),
 			zap.Int("num", len(d.Messages)))
 		dialogs = append(dialogs, d)
+		// fmt.Println(dialogs[0].Messages)
 	}
 
 	return dialogs, nil

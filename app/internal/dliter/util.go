@@ -57,6 +57,7 @@ func collectDialogs(dialogs [][]*Dialog) []*Dialog {
 		}
 		res = append(res, d...)
 	}
+	// fmt.Println(res[0].Messages)
 	return res
 }
 

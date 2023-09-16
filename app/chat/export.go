@@ -48,6 +48,7 @@ type Message struct {
 	ID   int    `json:"id"`
 	Type string `json:"type"`
 	File string `json:"file"`
+	EmojiCount int `json:"emoji_count"`
 	Date int    `json:"date,omitempty"`
 	Text string `json:"text,omitempty"`
 }
@@ -173,10 +174,10 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 			for _, value := range mr.Results {
 				emoji_count += value.Count
 			}
-
-			if media, ok := mm.GetMedia(); ok && media.TypeName() == "messageMediaDocument" && emoji_count <= 30 {
-				continue
-			}
+			// fmt.Println(emoji_count)
+			// if media, ok := mm.GetMedia(); ok && media.TypeName() == "messageMediaDocument" && emoji_count <= 30 {
+			// 	continue
+			// }
 
 			switch opts.Type {
 			case ExportTypeTime:
@@ -211,13 +212,13 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 				continue
 			}
 
-		//	enc.Obj(func(e *jx.Encoder) {
-		//		e.Field("id", func(e *jx.Encoder) { e.Int(m.ID) })
-		//		e.Field("type", func(e *jx.Encoder) { e.Str("message") })
-				// just a placeholder
-		//		e.Field("file", func(e *jx.Encoder) { e.Str("0") })
-		//		e.Field("emoji_count", func(e *jx.Encoder) { e.Int(emoji_count) })
-		//	})
+			// enc.Obj(func(e *jx.Encoder) {
+			// 	e.Field("id", func(e *jx.Encoder) { e.Int(m.ID) })
+			// 	e.Field("type", func(e *jx.Encoder) { e.Str("message") })
+			// 	// just a placeholder
+			// 	e.Field("file", func(e *jx.Encoder) { e.Str("0") })
+			// 	e.Field("emoji_count", func(e *jx.Encoder) { e.Int(emoji_count) })
+			// })
 			var jsonMessage any
 			if opts.Raw {
 				jsonMessage = m
@@ -230,6 +231,7 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 					ID:   m.ID,
 					Type: "message",
 					File: fileName,
+					EmojiCount: emoji_count,
 				}
 				if opts.WithContent {
 					t.Date = m.Date
@@ -237,6 +239,7 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 				}
 				jsonMessage = t
 			}
+			// fmt.Println(emoji_count)
 
 			mb, err := json.Marshal(jsonMessage)
 			if err != nil {
