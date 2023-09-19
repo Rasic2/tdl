@@ -8,6 +8,16 @@ with open("tdl-export.json", "r") as f:
 id = content['id']
 messages = content['messages']
 
+for index, meg in enumerate(messages[::-1]):
+    cur_group_id = meg['group_id']
+    if index == 0:
+        last_group_id = meg['group_id']
+    if index > 0 and cur_group_id != 0 and cur_group_id == last_group_id:
+        meg['emoji_count'] = last_emoji_count
+    else:
+        last_emoji_count = meg['emoji_count']
+        last_group_id = meg['group_id']
+
 os.system(f"rm -rf downloads/{id}/.DS_Store")
 os.system(f"rm -rf downloads/{id}/*.tmp")
 files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdir()]

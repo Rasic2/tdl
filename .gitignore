@@ -2,6 +2,7 @@
 log
 .tdl
 .vscode
+vendor
 downloads
 *.exe
 tdl

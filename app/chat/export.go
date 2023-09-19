@@ -45,12 +45,13 @@ type ExportOptions struct {
 }
 
 type Message struct {
-	ID   int    `json:"id"`
-	Type string `json:"type"`
-	File string `json:"file"`
-	EmojiCount int `json:"emoji_count"`
-	Date int    `json:"date,omitempty"`
-	Text string `json:"text,omitempty"`
+	ID         int    `json:"id"`
+	GroupID    int64  `json:"group_id"`
+	Type       string `json:"type"`
+	File       string `json:"file"`
+	EmojiCount int    `json:"emoji_count"`
+	Date       int    `json:"date,omitempty"`
+	Text       string `json:"text,omitempty"`
 }
 
 const (
@@ -170,6 +171,7 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 			// Count the emoji numbers, filter by type and emoji_count
 			mm, ok := msg.Msg.(*tg.Message)
 			mr, ok := mm.GetReactions()
+			mg, ok := mm.GetGroupedID()
 			emoji_count := 0
 			for _, value := range mr.Results {
 				emoji_count += value.Count
@@ -228,9 +230,10 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 					fileName = media.Name
 				}
 				t := &Message{
-					ID:   m.ID,
-					Type: "message",
-					File: fileName,
+					ID:         m.ID,
+					GroupID:    mg,
+					Type:       "message",
+					File:       fileName,
 					EmojiCount: emoji_count,
 				}
 				if opts.WithContent {
