@@ -22,10 +22,16 @@ os.system(f"rm -rf downloads/{id}/.DS_Store")
 os.system(f"rm -rf downloads/{id}/*.tmp")
 files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdir()]
 reduced_messages = []
+count = 0
 for meg in messages:
-    if 'emoji_count' in meg.keys() and meg['emoji_count'] > 30 and meg['id'] not in files:
-        reduced_messages.append(meg)
+    if 'emoji_count' in meg.keys() and meg['emoji_count'] > 30:
+        count+=1
+        if meg['id'] not in files:
+            reduced_messages.append(meg)
+    if count >= 100:
+        break
 sorted_reduced_messages = sorted(reduced_messages, key=lambda x:x['emoji_count'], reverse=True)
+print(f"--> Total download files needed: {len(sorted_reduced_messages)}")
 
 content_n = {'id': id, 'messages': sorted_reduced_messages}
 with open("tdl-export-reduced.json", "w") as f:
