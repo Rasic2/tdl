@@ -2,6 +2,7 @@
 log
 .tdl
 .vscode
+.DS_Store
 vendor
 downloads
 *.exe
