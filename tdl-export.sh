@@ -9,3 +9,4 @@ mkdir -p downloads/$1
 python reduce_export.py
 echo -e "\033[1;31m --> print url \033[0m"
 python get_url.py $1
+find ./downloads -type d -empty -delete
