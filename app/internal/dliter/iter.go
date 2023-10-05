@@ -47,7 +47,7 @@ func New(ctx context.Context, opts *Options) (*Iter, error) {
 	}
 	// fmt.Println(dialogs[0].Messages) # 被迫排序
 
-	manager := peers.Options{Storage: storage.NewPeers(opts.KV)}.Build(opts.Pool.Client(ctx, opts.Pool.Default()))
+	manager := peers.Options{Storage: storage.NewPeers(opts.KV)}.Build(opts.Pool.Default(ctx))
 	it := &Iter{
 		pool:        opts.Pool,
 		dialogs:     dialogs,
@@ -94,7 +94,7 @@ func (iter *Iter) Next(ctx context.Context) (*downloader.Item, error) {
 func (iter *Iter) item(ctx context.Context, i, j int) (*downloader.Item, error) {
 	peer, msg := iter.dialogs[i].Peer, iter.dialogs[i].Messages[j]
 
-	it := query.Messages(iter.pool.Client(ctx, iter.pool.Default())).
+	it := query.Messages(iter.pool.Default(ctx)).
 		GetHistory(peer).OffsetID(msg + 1).
 		BatchSize(1).Iter()
 	id := utils.Telegram.GetInputPeerID(peer)

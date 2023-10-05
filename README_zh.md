@@ -271,7 +271,17 @@ tdl login --code
 
 - 从消息链接下载（受保护的）文件：
 
+> **Note**
+> 从官方客户端的 "复制链接" 按钮获取消息链接。
+
 ```shell
+# 消息链接可能是以下格式之一：
+# - https://t.me/telegram/193
+# - https://t.me/c/1697797156/151
+# - https://t.me/iFreeKnow/45662/55005
+# - https://t.me/c/1492447836/251015/251021
+# - 如果你发现其他格式的链接，请提交 issue
+
 tdl dl -u https://t.me/tdl/1 -u https://t.me/tdl/2
 ```
 
@@ -374,6 +384,18 @@ tdl dl -u https://t.me/tdl/1 \
 tdl dl -u https://t.me/tdl/1 --continue
 # 重新下载
 tdl dl -u https://t.me/tdl/1 --restart
+```
+
+- (Beta) 以 HTTP 服务器的形式提供文件下载，而非使用内置下载器下载文件
+
+> **Note**
+> This is useful when you want to download files with a download manager like aria2/wget/axel/IDM/etc.
+> 当你想使用下载管理器（如 aria2/wget/axel/IDM 等）下载文件时，开启此选项
+
+```shell
+tdl dl -u https://t.me/tdl/1 --serve
+# 指定端口
+tdl dl -u https://t.me/tdl/1 --serve --port 8100
 ```
 
 - 完整例子:

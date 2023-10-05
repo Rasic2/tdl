@@ -264,9 +264,19 @@ tdl login --code
 
 > If you need higher speed, set higher threads. But do not arbitrarily set too large `threads`.
 
-- Download (protected) chat files from message urls:
+- Download (protected) chat files from message link:
+
+> **Note**
+> Get message links from "Copy Link" button in official clients.
 
 ```shell
+# message link may be like:
+# - https://t.me/telegram/193
+# - https://t.me/c/1697797156/151
+# - https://t.me/iFreeKnow/45662/55005
+# - https://t.me/c/1492447836/251015/251021
+# - file a new issue if you find other formats
+
 tdl dl -u https://t.me/tdl/1 -u https://t.me/tdl/2
 ```
 
@@ -368,6 +378,17 @@ tdl dl -u https://t.me/tdl/1 \
 tdl dl -u https://t.me/tdl/1 --continue
 # restart
 tdl dl -u https://t.me/tdl/1 --restart
+```
+
+- (Beta) Serve the files as a HTTP server instead of downloading them with built-in downloader
+
+> **Note**
+> This is useful when you want to download files with a download manager like aria2/wget/axel/IDM/etc.
+
+```shell
+tdl dl -u https://t.me/tdl/1 --serve
+# specify custom port
+tdl dl -u https://t.me/tdl/1 --serve --port 8100
 ```
 
 - Full example:

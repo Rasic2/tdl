@@ -52,6 +52,7 @@ type Message struct {
 	EmojiCount int    `json:"emoji_count"`
 	Date       int    `json:"date,omitempty"`
 	Text       string `json:"text,omitempty"`
+	Raw  *tg.Message `json:"raw,omitempty"`
 }
 
 const (
@@ -221,30 +222,28 @@ func Export(ctx context.Context, opts *ExportOptions) error {
 			// 	e.Field("file", func(e *jx.Encoder) { e.Str("0") })
 			// 	e.Field("emoji_count", func(e *jx.Encoder) { e.Int(emoji_count) })
 			// })
-			var jsonMessage any
+
+			fileName := ""
+			if media != nil { // #207
+				fileName = media.Name
+			}
+			t := &Message{
+				ID:         m.ID,
+				GroupID:    mg,
+				Type:       "message",
+				File:       fileName,
+				EmojiCount: emoji_count,
+			}
+			if opts.WithContent {
+				t.Date = m.Date
+				t.Text = m.Message
+			}
 			if opts.Raw {
-				jsonMessage = m
-			} else {
-				fileName := ""
-				if media != nil { // #207
-					fileName = media.Name
-				}
-				t := &Message{
-					ID:         m.ID,
-					GroupID:    mg,
-					Type:       "message",
-					File:       fileName,
-					EmojiCount: emoji_count,
-				}
-				if opts.WithContent {
-					t.Date = m.Date
-					t.Text = m.Message
-				}
-				jsonMessage = t
+				t.Raw = m
 			}
 			// fmt.Println(emoji_count)
 
-			mb, err := json.Marshal(jsonMessage)
+			mb, err := json.Marshal(t)
 			if err != nil {
 				return fmt.Errorf("failed to marshal message: %w", err)
 			}
