@@ -5,17 +5,28 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/v6/progress"
+	"github.com/jedib0t/go-pretty/v6/text"
+	tsize "github.com/kopoli/go-terminal-size"
 )
 
 func New(formatter progress.UnitsFormatter) progress.Writer {
 	pw := progress.NewWriter()
 	pw.SetAutoStop(false)
-	pw.SetTrackerLength(20)
-	pw.SetMessageWidth(35)
+
+	width := 50
+	if size, err := tsize.GetSize(); err == nil {
+		width = size.Width
+	}
+	if width > 100 {
+		width = 100
+	}
+	pw.SetTrackerLength(width / 3)
+	pw.SetMessageWidth(width * 2 / 3)
 	pw.SetStyle(progress.StyleDefault)
 	pw.SetTrackerPosition(progress.PositionRight)
 	pw.SetUpdateFrequency(time.Millisecond * 100)
 	pw.Style().Colors = progress.StyleColorsExample
+	pw.Style().Colors.Message = text.Colors{text.FgBlue}
 	pw.Style().Options.PercentFormat = "%4.1f%%"
 	pw.Style().Visibility.TrackerOverall = true
 	pw.Style().Visibility.ETA = true

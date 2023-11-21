@@ -3,15 +3,13 @@ package dliter
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
 	"text/template"
 	"time"
 
+	"github.com/go-faster/errors"
 	"github.com/gotd/td/telegram/peers"
-	"github.com/gotd/td/telegram/query"
-	"github.com/gotd/td/tg"
 
 	"github.com/iyear/tdl/pkg/downloader"
 	"github.com/iyear/tdl/pkg/storage"
@@ -94,24 +92,11 @@ func (iter *Iter) Next(ctx context.Context) (*downloader.Item, error) {
 func (iter *Iter) item(ctx context.Context, i, j int) (*downloader.Item, error) {
 	peer, msg := iter.dialogs[i].Peer, iter.dialogs[i].Messages[j]
 
-	it := query.Messages(iter.pool.Default(ctx)).
-		GetHistory(peer).OffsetID(msg + 1).
-		BatchSize(1).Iter()
 	id := utils.Telegram.GetInputPeerID(peer)
 
-	// get one message
-	if !it.Next(ctx) {
-		return nil, it.Err()
-	}
-
-	message, ok := it.Value().Msg.(*tg.Message)
-	if !ok {
-		return nil, fmt.Errorf("msg is not *tg.Message")
-	}
-
-	// check again to avoid deleted message
-	if message.ID != msg {
-		return nil, fmt.Errorf("msg may be deleted, id: %d", msg)
+	message, err := utils.Telegram.GetSingleMessage(ctx, iter.pool.Default(ctx), peer, msg)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolve message")
 	}
 
 	item, ok := tmedia.GetMedia(message)
@@ -134,7 +119,7 @@ func (iter *Iter) item(ctx context.Context, i, j int) (*downloader.Item, error) 
 	}
 
 	buf := bytes.Buffer{}
-	err := iter.template.Execute(&buf, &fileTemplate{
+	err = iter.template.Execute(&buf, &fileTemplate{
 		DialogID:     id,
 		MessageID:    message.ID,
 		MessageDate:  int64(message.Date),
@@ -147,9 +132,10 @@ func (iter *Iter) item(ctx context.Context, i, j int) (*downloader.Item, error) 
 	}
 	item.Name = buf.String()
 
-	item.ID = iter.ij2n(i, j)
-
-	return item, nil
+	return &downloader.Item{
+		ID:    iter.ij2n(i, j),
+		Media: item,
+	}, nil
 }
 
 func (iter *Iter) Finish(_ context.Context, id int) error {

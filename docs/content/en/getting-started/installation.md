@@ -48,15 +48,13 @@ curl -sSL https://ghproxy.com/https://raw.githubusercontent.com/iyear/tdl/master
 #### Install with `ghproxy.com`
 
 {{< command >}}
-curl -sSL https://ghproxy.com/https://raw.githubusercontent.com/iyear/tdl/master/scripts/install.sh | sudo bash -s --
---proxy
+curl -sSL https://ghproxy.com/https://raw.githubusercontent.com/iyear/tdl/master/scripts/install.sh | sudo bash -s -- --proxy
 {{< /command >}}
 
 #### Install specific version
 
 {{< command >}}
-curl -sSL https://ghproxy.com/https://raw.githubusercontent.com/iyear/tdl/master/scripts/install.sh | sudo bash -s --
---version VERSION
+curl -sSL https://ghproxy.com/https://raw.githubusercontent.com/iyear/tdl/master/scripts/install.sh | sudo bash -s -- --version VERSION
 {{< /command >}}
 
 {{< /tab >}}
@@ -121,7 +119,7 @@ Contributions are welcome!
 
 ## Source
 
-To build the extended edition of Hugo from source you must:
+To build the extended edition of `tdl` from source you must:
 
 1. Install [Git](https://git-scm.com/)
 2. Install [Go](https://go.dev/) version 1.19 or later
@@ -129,8 +127,8 @@ To build the extended edition of Hugo from source you must:
 
 {{< hint info >}}
 The installation directory is controlled by the `GOPATH` and `GOBIN` environment variables. If `GOBIN` is set, binaries
-are installed to that directory. If `GOPATH` is set, binaries are installed to the bin subdirectory of the first
-directory in the `GOPATH` list. Otherwise, binaries are installed to the bin subdirectory of the
+are installed to that directory. If `GOPATH` is set, binaries are installed to the `bin` subdirectory of the first
+directory in the `GOPATH` list. Otherwise, binaries are installed to the `bin` subdirectory of the
 default `GOPATH` (`$HOME/go` or `%USERPROFILE%\go`).
 {{< /hint >}}
 

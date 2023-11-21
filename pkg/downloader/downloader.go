@@ -2,7 +2,6 @@ package downloader
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/go-faster/errors"
 	"github.com/gotd/td/telegram/downloader"
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"go.uber.org/zap"
@@ -42,11 +42,11 @@ type Options struct {
 	Takeout    bool
 }
 
-func New(opts Options) *Downloader {
+func New(opts Options) (*Downloader, error) {
 	return &Downloader{
 		pw:   prog.New(formatter),
 		opts: opts,
-	}
+	}, nil
 }
 
 func (d *Downloader) Download(ctx context.Context, limit int) error {
@@ -86,8 +86,9 @@ func (d *Downloader) Download(ctx context.Context, limit int) error {
 			time.Sleep(time.Millisecond * 10)
 		}
 
+		// canceled error is ignored by gotd, so we can't detect it in main entry
 		if errors.Is(err, context.Canceled) {
-			color.Red("Download aborted.")
+			color.Red("Download aborted by user")
 		}
 		return err
 	}

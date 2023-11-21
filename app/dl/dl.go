@@ -3,12 +3,11 @@ package dl
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
-	"github.com/gotd/contrib/middleware/floodwait"
+	"github.com/go-faster/errors"
 	"github.com/spf13/viper"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -21,6 +20,7 @@ import (
 	"github.com/iyear/tdl/pkg/key"
 	"github.com/iyear/tdl/pkg/kv"
 	"github.com/iyear/tdl/pkg/logger"
+	"github.com/iyear/tdl/pkg/tmessage"
 )
 
 type Options struct {
@@ -45,7 +45,7 @@ type Options struct {
 
 type parser struct {
 	Data   []string
-	Parser func(ctx context.Context, pool dcpool.Pool, kvd kv.KV, data []string) ([]*dliter.Dialog, error)
+	Parser tmessage.ParseSource
 }
 
 func Run(ctx context.Context, opts *Options) error {
@@ -55,15 +55,19 @@ func Run(ctx context.Context, opts *Options) error {
 	}
 
 	return tgc.RunWithAuth(ctx, c, func(ctx context.Context) (rerr error) {
-		pool := dcpool.NewPool(c, int64(viper.GetInt(consts.FlagPoolSize)), floodwait.NewSimpleWaiter())
+		middlewares, err := tgc.NewDefaultMiddlewares(ctx)
+		if err != nil {
+			return errors.Wrap(err, "create middlewares")
+		}
+
+		pool := dcpool.NewPool(c, int64(viper.GetInt(consts.FlagPoolSize)), middlewares...)
 		defer multierr.AppendInvoke(&rerr, multierr.Close(pool))
 
 		parsers := []parser{
-			{Data: opts.URLs, Parser: parseURLs},
-			{Data: opts.Files, Parser: parseFiles},
+			{Data: opts.URLs, Parser: tmessage.FromURL(ctx, pool, kvd, opts.URLs)},
+			{Data: opts.Files, Parser: tmessage.FromFile(ctx, pool, kvd, opts.Files, true)},
 		}
-		dialogs, err := collectDialogs(ctx, pool, kvd, parsers)
-		// fmt.Println(dialogs[1][0].Messages)
+		dialogs, err := collectDialogs(parsers)
 		if err != nil {
 			return err
 		}
@@ -124,15 +128,18 @@ func Run(ctx context.Context, opts *Options) error {
 			zap.Int("threads", options.Threads),
 			zap.Int("limit", limit))
 
-		return downloader.New(options).Download(ctx, limit)
+		dl, err := downloader.New(options)
+		if err != nil {
+			return errors.Wrap(err, "create downloader")
+		}
+		return dl.Download(ctx, limit)
 	})
 }
 
-func collectDialogs(ctx context.Context, pool dcpool.Pool, kvd kv.KV, parsers []parser) ([][]*dliter.Dialog, error) {
-	var dialogs [][]*dliter.Dialog
+func collectDialogs(parsers []parser) ([][]*tmessage.Dialog, error) {
+	var dialogs [][]*tmessage.Dialog
 	for _, p := range parsers {
-		d, err := p.Parser(ctx, pool, kvd, p.Data)
-		// fmt.Println(p.Data)
+		d, err := tmessage.Parse(p.Parser)
 		if err != nil {
 			return nil, err
 		}

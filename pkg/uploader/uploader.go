@@ -2,12 +2,12 @@ package uploader
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/go-faster/errors"
 	"github.com/gotd/td/telegram/message"
 	"github.com/gotd/td/telegram/message/styling"
 	"github.com/gotd/td/telegram/peers"
@@ -38,11 +38,13 @@ type Options struct {
 	Photo    bool
 }
 
-func New(o Options) *Uploader {
+func New(o Options) (*Uploader, error) {
+	pw := prog.New(formatter)
+
 	return &Uploader{
-		pw:   prog.New(formatter),
+		pw:   pw,
 		opts: o,
-	}
+	}, nil
 }
 
 func (u *Uploader) to(ctx context.Context, chat string) (peers.Peer, error) {
@@ -97,7 +99,7 @@ func (u *Uploader) Upload(ctx context.Context, chat string, limit int) error {
 		}
 
 		if errors.Is(err, context.Canceled) {
-			color.Red("Upload aborted.")
+			color.Red("Upload aborted by user")
 		}
 		return err
 	}

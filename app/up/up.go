@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/fatih/color"
-	"github.com/gotd/contrib/middleware/floodwait"
+	"github.com/go-faster/errors"
 	"github.com/spf13/viper"
 	"go.uber.org/multierr"
 
@@ -36,7 +36,12 @@ func Run(ctx context.Context, opts *Options) error {
 	}
 
 	return tgc.RunWithAuth(ctx, c, func(ctx context.Context) (rerr error) {
-		pool := dcpool.NewPool(c, int64(viper.GetInt(consts.FlagPoolSize)), floodwait.NewSimpleWaiter())
+		middlewares, err := tgc.NewDefaultMiddlewares(ctx)
+		if err != nil {
+			return errors.Wrap(err, "create middlewares")
+		}
+
+		pool := dcpool.NewPool(c, int64(viper.GetInt(consts.FlagPoolSize)), middlewares...)
 		defer multierr.AppendInvoke(&rerr, multierr.Close(pool))
 
 		options := uploader.Options{
@@ -47,6 +52,11 @@ func Run(ctx context.Context, opts *Options) error {
 			Iter:     newIter(files, opts.Remove),
 			Photo:    opts.Photo,
 		}
-		return uploader.New(options).Upload(ctx, opts.Chat, viper.GetInt(consts.FlagLimit))
+
+		up, err := uploader.New(options)
+		if err != nil {
+			return errors.Wrap(err, "create uploader")
+		}
+		return up.Upload(ctx, opts.Chat, viper.GetInt(consts.FlagLimit))
 	})
 }
