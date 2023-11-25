@@ -16,7 +16,7 @@
 <img src="https://img.shields.io/github/downloads/iyear/tdl/total?style=flat-square" alt="">
 </p>
 
-> **Note**
+> [!IMPORTANT]
 > 中文文档可能落后于英文文档，如果有问题请先查看英文文档。
 > 请使用英文发起新的 Issue, 以便于追踪和搜索
 
@@ -27,6 +27,7 @@
 - 吃满你的带宽
 - 比官方客户端更快
 - 支持从受保护的会话中下载文件
+- 具有自动回退和消息路由的转发功能
 - 支持上传文件至 Telegram
 - 导出历史消息/成员/订阅者数据至 JSON 文件
 
