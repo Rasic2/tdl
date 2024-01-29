@@ -14,6 +14,14 @@ import (
 	"github.com/iyear/tdl/pkg/logger"
 )
 
+var internalErrors = []string{
+	"Timedout", // #373
+	"No workers running",
+	"RPC_CALL_FAIL",
+	"RPC_MCGET_FAIL",
+	"WORKER_BUSY_TOO_LONG_RETRY", // #462
+}
+
 type retry struct {
 	max    int
 	errors []string
@@ -43,8 +51,7 @@ func (r retry) Handle(next tg.Invoker) telegram.InvokeFunc {
 // New returns middleware that retries request if it fails with one of provided errors.
 func New(max int, errors ...string) telegram.Middleware {
 	return retry{
-		max: max,
-		errors: append(errors,
-			"Timedout"), // #373
+		max:    max,
+		errors: append(errors, internalErrors...), // #373
 	}
 }
