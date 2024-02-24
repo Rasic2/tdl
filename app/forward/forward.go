@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/vm"
+	"github.com/expr-lang/expr"
+	"github.com/expr-lang/expr/vm"
 	"github.com/go-faster/errors"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/peers"
@@ -31,13 +32,16 @@ import (
 type Options struct {
 	From   []string
 	To     string
+	Edit   string
 	Mode   forwarder.Mode
 	Silent bool
 	DryRun bool
+	Single bool
+	Desc   bool
 }
 
 func Run(ctx context.Context, c *telegram.Client, kvd kv.KV, opts Options) (rerr error) {
-	if opts.To == "-" {
+	if opts.To == "-" || opts.Edit == "-" {
 		fg := texpr.NewFieldsGetter(nil)
 
 		fields, err := fg.Walk(exprEnv(nil, nil))
@@ -58,7 +62,7 @@ func Run(ctx context.Context, c *telegram.Client, kvd kv.KV, opts Options) (rerr
 
 	ctx = tctx.WithPool(ctx, pool)
 
-	dialogs, err := collectDialogs(ctx, opts.From)
+	dialogs, err := collectDialogs(ctx, opts.From, opts.Desc)
 	if err != nil {
 		return errors.Wrap(err, "collect dialogs")
 	}
@@ -68,6 +72,11 @@ func Run(ctx context.Context, c *telegram.Client, kvd kv.KV, opts Options) (rerr
 	to, err := resolveDest(ctx, manager, opts.To)
 	if err != nil {
 		return errors.Wrap(err, "resolve dest peer")
+	}
+
+	edit, err := resolveEdit(opts.Edit)
+	if err != nil {
+		return errors.Wrap(err, "resolve edit")
 	}
 
 	fwProgress := prog.New(pw.FormatNumber)
@@ -80,10 +89,12 @@ func Run(ctx context.Context, c *telegram.Client, kvd kv.KV, opts Options) (rerr
 			manager: manager,
 			pool:    pool,
 			to:      to,
+			edit:    edit,
 			dialogs: dialogs,
 			mode:    opts.Mode,
 			silent:  opts.Silent,
 			dryRun:  opts.DryRun,
+			grouped: !opts.Single,
 		}),
 		Progress: newProgress(fwProgress),
 		PartSize: viper.GetInt(consts.FlagPartSize),
@@ -96,7 +107,7 @@ func Run(ctx context.Context, c *telegram.Client, kvd kv.KV, opts Options) (rerr
 	return fw.Forward(ctx)
 }
 
-func collectDialogs(ctx context.Context, input []string) ([]*tmessage.Dialog, error) {
+func collectDialogs(ctx context.Context, input []string, desc bool) ([]*tmessage.Dialog, error) {
 	var dialogs []*tmessage.Dialog
 
 	for _, p := range input {
@@ -115,6 +126,14 @@ func collectDialogs(ctx context.Context, input []string) ([]*tmessage.Dialog, er
 			d, err = tmessage.Parse(tmessage.FromFile(ctx, tctx.Pool(ctx), tctx.KV(ctx), []string{p}, false))
 			if err != nil {
 				return nil, errors.Wrap(err, "parse from file")
+			}
+		}
+
+		if desc {
+			for _, dd := range d {
+				for i, j := 0, len(dd.Messages)-1; i < j; i, j = i+1, j-1 {
+					dd.Messages[i], dd.Messages[j] = dd.Messages[j], dd.Messages[i]
+				}
 			}
 		}
 
@@ -145,6 +164,27 @@ func resolveDest(ctx context.Context, manager *peers.Manager, input string) (*vm
 	if _, err := utils.Telegram.GetInputPeer(ctx, manager, input); err == nil {
 		// convert to const string
 		return compile(fmt.Sprintf(`"%s"`, input))
+	}
+
+	// text
+	return compile(input)
+}
+
+// resolveEdit returns nil if input is empty, otherwise it returns a vm.Program. It can be a text or a file based on expression engine.
+func resolveEdit(input string) (*vm.Program, error) {
+	compile := func(i string) (*vm.Program, error) {
+		// we pass empty peer and message to enable type checking
+		return expr.Compile(i, expr.Env(exprEnv(nil, nil)), expr.AsKind(reflect.String))
+	}
+
+	// no edit, nil program
+	if input == "" {
+		return nil, nil
+	}
+
+	// file
+	if exp, err := os.ReadFile(input); err == nil {
+		return compile(string(exp))
 	}
 
 	// text
