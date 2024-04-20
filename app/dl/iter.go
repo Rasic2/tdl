@@ -31,6 +31,7 @@ type fileTemplate struct {
 	MessageID    int
 	MessageDate  int64
 	FileName     string
+	FileCaption  string
 	FileSize     string
 	DownloadDate int64
 }
@@ -43,6 +44,7 @@ type iter struct {
 	include map[string]struct{}
 	exclude map[string]struct{}
 	opts    Options
+	delay   time.Duration
 
 	mu          *sync.Mutex
 	finished    map[int]struct{}
@@ -53,7 +55,9 @@ type iter struct {
 	err         error
 }
 
-func newIter(pool dcpool.Pool, manager *peers.Manager, dialog [][]*tmessage.Dialog, opts Options) (*iter, error) {
+func newIter(pool dcpool.Pool, manager *peers.Manager, dialog [][]*tmessage.Dialog,
+	opts Options, delay time.Duration,
+) (*iter, error) {
 	tpl, err := template.New("dl").
 		Funcs(tplfunc.FuncMap(tplfunc.All...)).
 		Parse(opts.Template)
@@ -82,6 +86,7 @@ func newIter(pool dcpool.Pool, manager *peers.Manager, dialog [][]*tmessage.Dial
 		include: includeMap,
 		exclude: excludeMap,
 		tpl:     tpl,
+		delay:   delay,
 
 		mu:          &sync.Mutex{},
 		finished:    make(map[int]struct{}),
@@ -100,6 +105,11 @@ func (i *iter) Next(ctx context.Context) bool {
 		i.err = ctx.Err()
 		return false
 	default:
+	}
+
+	// if delay is set, sleep for a while for each iteration
+	if i.delay > 0 && (i.i+i.j) > 0 { // skip first delay
+		time.Sleep(i.delay)
 	}
 
 	for {
@@ -168,6 +178,7 @@ func (i *iter) process(ctx context.Context) (ret bool, skip bool) {
 		MessageID:    message.ID,
 		MessageDate:  int64(message.Date),
 		FileName:     item.Name,
+		FileCaption:  message.Message,
 		FileSize:     utils.Byte.FormatBinaryBytes(item.Size),
 		DownloadDate: time.Now().Unix(),
 	})

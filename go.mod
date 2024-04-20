@@ -6,8 +6,8 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/bcicen/jstream v1.0.1
 	github.com/beevik/ntp v1.3.1
-	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/expr-lang/expr v1.16.1
+	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/expr-lang/expr v1.16.5
 	github.com/fatih/color v1.16.0
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/go-faster/errors v0.7.1
@@ -16,17 +16,17 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gotd/contrib v0.19.0
-	github.com/gotd/td v0.99.1
+	github.com/gotd/td v0.99.2
 	github.com/iancoleman/strcase v0.3.0
 	github.com/iyear/connectproxy v0.1.1
 	github.com/jedib0t/go-pretty/v6 v6.5.0
-	github.com/klauspost/compress v1.17.7
+	github.com/klauspost/compress v1.17.8
 	github.com/kopoli/go-terminal-size v0.0.0-20170219200355-5c97524c8b54
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/onsi/ginkgo/v2 v2.17.0
+	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
-	github.com/shirou/gopsutil/v3 v3.24.2
+	github.com/shirou/gopsutil/v3 v3.24.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
@@ -38,8 +38,8 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/net v0.22.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/net v0.24.0
+	golang.org/x/sync v0.7.0
 	golang.org/x/time v0.5.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
@@ -87,10 +87,10 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/term v0.18.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.19.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
