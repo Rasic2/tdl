@@ -21,7 +21,6 @@ IFS=$IFS_old
 echo -e "\033[1;31m --> tdl chat export \033[0m"
 #go run main.go chat export -c $1 -f "Views>200 && Media.Name not endsWith '.jpg'"
 python export.py $1
-exit
 
 echo -e "\033[1;31m --> reduce export \033[0m"
 mkdir -p downloads/$1

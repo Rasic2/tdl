@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+
 	// "fmt"
 
 	"github.com/bcicen/jstream"
@@ -131,7 +132,8 @@ func getChatInfo(ctx context.Context, client *tg.Client, kvd kv.KV, r io.Reader)
 		}
 
 		if _kv.Key == keyID {
-			chatID = int64(_kv.Value.(float64))
+			chatID_f, _ := strconv.ParseFloat(_kv.Value.(string), 64)
+			chatID = int64(chatID_f)
 		}
 
 		if chatID != 0 {
