@@ -30,4 +30,7 @@ structed_messages = {str(meg['id']):[meg['emoji_count'],meg['file']]  for meg in
 for file in files:
     if (f"{id}_{file}" not in stored):
         with open("watched","a") as f:
-            f.write(f"{id},{file},{structed_messages[str(file)][0]},{structed_messages[str(file)][1]}\n")
+            try:
+                f.write(f"{id},{file},{structed_messages[str(file)][0]},{structed_messages[str(file)][1]}\n")
+            except KeyError:
+                print(f"{file} is not exist")

@@ -76,7 +76,7 @@ func newIter(pool dcpool.Pool, manager *peers.Manager, dialog [][]*tmessage.Dial
 	excludeMap := filterMap(opts.Exclude, utils.FS.AddPrefixDot)
 
 	// to keep fingerprint stable
-	sortDialogs(dialogs, opts.Desc)
+	// sortDialogs(dialogs, opts.Desc)
 
 	return &iter{
 		pool:    pool,
