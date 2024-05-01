@@ -132,8 +132,15 @@ func getChatInfo(ctx context.Context, client *tg.Client, kvd kv.KV, r io.Reader)
 		}
 
 		if _kv.Key == keyID {
-			chatID_f, _ := strconv.ParseFloat(_kv.Value.(string), 64)
-			chatID = int64(chatID_f)
+			switch _kv.Value.(type) {
+			case string:
+				chatID_f, _ := strconv.ParseFloat(_kv.Value.(string), 64)
+				chatID = int64(chatID_f)
+				break
+			case float64:
+				chatID = int64(_kv.Value.(float64))
+				break
+			}
 		}
 
 		if chatID != 0 {
