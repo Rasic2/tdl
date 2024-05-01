@@ -1,6 +1,9 @@
 import os
+import sys
 import json
 from pathlib import Path
+
+min_reaction = int(sys.argv[1]) 
 
 with open("tdl-export.json", "r") as f:
     content = json.load(f)
@@ -24,7 +27,7 @@ files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdi
 reduced_messages = []
 count = 0
 for meg in messages:
-    if 'emoji_count' in meg.keys() and meg['emoji_count'] > 30:
+    if 'emoji_count' in meg.keys() and meg['emoji_count'] > min_reaction:
         count+=1
         if meg['id'] not in files:
             reduced_messages.append(meg)
