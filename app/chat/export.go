@@ -42,14 +42,14 @@ type ExportOptions struct {
 }
 
 type Message struct {
-	ID         int    `json:"id"`
-	GroupID    int64  `json:"group_id"`
-	Type       string `json:"type"`
-	File       string `json:"file"`
-	EmojiCount int    `json:"emoji_count"`
-	Date       int    `json:"date,omitempty"`
-	Text       string `json:"text,omitempty"`
-	Raw  *tg.Message `json:"raw,omitempty"`
+	ID         int         `json:"id"`
+	GroupID    int64       `json:"group_id"`
+	Type       string      `json:"type"`
+	File       string      `json:"file"`
+	EmojiCount int         `json:"emoji_count"`
+	Date       int         `json:"date,omitempty"`
+	Text       string      `json:"text,omitempty"`
+	Raw        *tg.Message `json:"raw,omitempty"`
 }
 
 // ExportType
@@ -182,6 +182,13 @@ loop:
 			continue
 		}
 
+		mr, _ := m.GetReactions()
+		mg, _ := m.GetGroupedID()
+		emoji_count := 0
+		for _, value := range mr.Results {
+			emoji_count += value.Count
+		}
+
 		b, err := texpr.Run(filter, texpr.ConvertEnvMessage(m))
 		if err != nil {
 			return fmt.Errorf("failed to run filter: %w", err)
@@ -195,9 +202,11 @@ loop:
 			fileName = media.Name
 		}
 		t := &Message{
-			ID:   m.ID,
-			Type: "message",
-			File: fileName,
+			ID:         m.ID,
+			Type:       "message",
+			File:       fileName,
+			GroupID:    mg,
+			EmojiCount: emoji_count,
 		}
 		if opts.WithContent {
 			t.Date = m.Date
