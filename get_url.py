@@ -1,6 +1,5 @@
-import sys
 import json
-from pathlib import Path
+import sys
 
 RootUrl = "https://t.me/"
 
@@ -20,12 +19,12 @@ for group in chatlist:
 for msg in messages:
     print(RootUrl + username + "/" + str(msg['id']))
 
-#files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdir()]
-#reduced_messages = []
-#for meg in messages:
+# files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdir()]
+# reduced_messages = []
+# for meg in messages:
 #    if meg['id'] not in files:
 #        reduced_messages.append(meg)
 
-#content_n = {'id': id, 'messages': reduced_messages}
-#with open("tdl-export-reduced.json", "w") as f:
+# content_n = {'id': id, 'messages': reduced_messages}
+# with open("tdl-export-reduced.json", "w") as f:
 #    json.dump(content_n, f)
