@@ -6,7 +6,10 @@ go run main.go chat ls >tdl-chatlist
 for chat in $(cat tdl-chatlist | sed -n "2,$ p"); do
   id=$(echo $chat | awk '{print $1}')
   # shellcheck disable=SC2010
-  modify_time=$(ls -l -D "%Y%m%d" downloads | grep "$id" | awk '{print $6}' 2>/dev/null)
+  modify_time_1=$(ls -l -D "%Y%m%d" downloads | grep "$id" | awk '{print $6}' 2>/dev/null)
+  # shellcheck disable=SC2010
+  modify_time_2=$(ls -l -D "%Y%m%d" jsons | grep "$id" | awk '{print $6}' 2>/dev/null)
+  [ x"$modify_time_2" == "x" ] && modify_time=$modify_time_2 || modify_time=$modify_time_1
   if [ -z $modify_time ]; then
     echo $chat
   else
