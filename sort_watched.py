@@ -5,4 +5,4 @@ sorted_list = []
 for item in content:
     if item not in sorted_list:
         sorted_list.append(item)
-print(sorted_list)
+        print(sorted_list.index(item)+1, item)
