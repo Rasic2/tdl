@@ -20,6 +20,9 @@ else:
     os.system(f"go run main.go chat export -c {id} -T id -i {max_id + 1}")
     with open(DefaultJson, "r") as f:
         default_content = json.load(f)
+
+    assert default_content['id'] == json_content['id']
+
     default_messages = default_content['messages']
     final_messages = messages + [meg for meg in default_messages if meg['id'] not in all_ids]
 
