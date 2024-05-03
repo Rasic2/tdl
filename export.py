@@ -21,7 +21,7 @@ else:
     with open(DefaultJson, "r") as f:
         default_content = json.load(f)
 
-    assert default_content['id'] == json_content['id']
+    assert str(default_content['id']) == str(json_content['id'])
 
     default_messages = default_content['messages']
     final_messages = messages + [meg for meg in default_messages if meg['id'] not in all_ids]
