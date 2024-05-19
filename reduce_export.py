@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 min_reaction = int(sys.argv[1])
+min_count = 20
 
 with open("tdl-export.json", "r") as f:
     content = json.load(f)
@@ -26,7 +27,7 @@ sorted_messages = sorted(messages, key=lambda x: x['emoji_count'], reverse=True)
 for item in sorted_messages:
     print(item)
     count += 1
-    if count > 10:
+    if count >= min_count:
         break
 
 os.system(f"rm -rf downloads/{id}/.DS_Store")
@@ -35,11 +36,11 @@ files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdi
 reduced_messages = []
 count = 0
 for meg in sorted_messages:
-    if 'emoji_count' in meg.keys() and meg['emoji_count'] > min_reaction:
+    if 'emoji_count' in meg.keys() and meg['emoji_count'] >= min_reaction:
         count += 1
         if meg['id'] not in files:
             reduced_messages.append(meg)
-    if count >= 10:
+    if count >= min_count:
         break
 sorted_reduced_messages = sorted(reduced_messages, key=lambda x: x['emoji_count'], reverse=True)
 print(f"--> Total download files needed: {len(sorted_reduced_messages)}")
