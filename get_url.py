@@ -11,6 +11,7 @@ messages = content['messages']
 with open("tdl-chatlist", "r") as f:
     chatlist = f.readlines()
 
+username = ""
 for group in chatlist:
     if sys.argv[1] in group.split():
         username = group.split()[-2]
