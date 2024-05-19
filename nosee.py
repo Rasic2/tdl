@@ -16,6 +16,6 @@ for item in sorted_total:
     if not Path(f'downloads/{item["item_id"]}/{item["item_id"]}_{item["id"]}_{item["file"]}').exists():
         count += 1
         print(item["item_id"], item["file"], item["emoji_count"])
-    if count >= 100:
+    if count >= 10:
         break
 pass
