@@ -13,7 +13,7 @@ sorted_total = sorted(total, key=lambda x: x['emoji_count'], reverse=True)
 
 count = 0
 for item in sorted_total:
-    if not Path(f'downloads/{item["item_id"]}/{item["item_id"]}_{item["id"]}_{item["file"]}').exists():
+    if not Path(f'downloads/{item["item_id"]}/{item["item_id"]}_{item["id"]}_{item["file"].replace(" ","_")}').exists():
         count += 1
         print(item["item_id"], item["file"], item["emoji_count"])
     if count >= 10:
