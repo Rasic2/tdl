@@ -35,8 +35,8 @@ for meg in sorted_messages:
         count += 1
         if meg['id'] not in files:
             reduced_messages.append(meg)
-    if count >= min_count:
-        break
+    #if count >= min_count:
+     #   break
 sorted_reduced_messages = sorted(reduced_messages, key=lambda x: x['emoji_count'], reverse=True)
 print(f"--> Total download files needed: {len(sorted_reduced_messages)}")
 
