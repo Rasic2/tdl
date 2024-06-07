@@ -18,7 +18,7 @@ for group in chatlist:
         break
 
 for msg in messages:
-    print(RootUrl + username + "/" + str(msg['id']))
+    print(RootUrl + username + "/" + str(msg['id']),str(sys.argv[1])+"_"+str(msg['id'])+"_"+msg['file'])
 
 # files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdir()]
 # reduced_messages = []
