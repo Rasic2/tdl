@@ -17,6 +17,6 @@ for item in sorted_total:
     if not (list(file_exist)):
         count += 1
         print(item["item_id"], item["file"], item["emoji_count"])
-    if count >= 10:
+    if count >= 40:
         break
 pass
