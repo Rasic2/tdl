@@ -11,8 +11,14 @@ for file in Path("jsons").iterdir():
 
 sorted_total = sorted(total, key=lambda x: x['emoji_count'], reverse=True)
 
+with open("tdl-chatlist", "r") as f:
+    content = f.readlines()
+
+exist_ids = [line.split()[0] for line in content[1:]]
 count = 0
 for item in sorted_total:
+    if item["item_id"] not in exist_ids:
+        continue
     file_exist = Path(f'downloads/{item["item_id"]}').glob(f'{item["item_id"]}_{item["id"]}_*')
     if not (list(file_exist)):
         count += 1
