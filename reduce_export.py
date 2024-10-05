@@ -31,7 +31,7 @@ reduced_messages = []
 count = 0
 for meg in sorted_messages:
     if 'emoji_count' in meg.keys() and meg['emoji_count'] >= min_reaction:
-        print(meg)
+        #print(meg)
         count += 1
         if meg['id'] not in files:
             reduced_messages.append(meg)
