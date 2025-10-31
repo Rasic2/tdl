@@ -3,7 +3,9 @@ set -e
 
 IFS_old=$IFS
 IFS=$'\n'
-go run main.go chat ls >tdl-chatlist
+if [ ! -f tdl-chatlist ] || [ $(find tdl-chatlist -mtime +0) ]; then
+    go run main.go chat ls > tdl-chatlist
+fi
 for chat in $(cat tdl-chatlist | sed -n "2,$ p"); do
   id=$(echo $chat | awk '{print $1}')
   # shellcheck disable=SC2010
@@ -11,12 +13,16 @@ for chat in $(cat tdl-chatlist | sed -n "2,$ p"); do
   # shellcheck disable=SC2010
   modify_time_2=$(ls -l -D "%Y%m%d" jsons | grep "$id" | awk '{print $6}' 2>/dev/null)
   [ "x$modify_time_2" == "x" ] && modify_time=$modify_time_1 || modify_time=$modify_time_2
-  if [ -z $modify_time ]; then
-    echo $chat
+  
+  if [ -z "$modify_time" ]; then
+    echo "$chat"
   else
-    now=$(date "+%Y%m%d")
-    if [ $now != $modify_time ]; then
-      echo $chat
+    # macOS/BSD 日期计算
+    seven_days_ago=$(date -v-7d "+%Y%m%d")
+    
+    # 比较修改时间是否在7天前
+    if [ "$modify_time" -lt "$seven_days_ago" ]; then
+      echo "$chat"
     fi
   fi
 done
