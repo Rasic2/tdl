@@ -15,6 +15,9 @@ sorted_total = sorted(total, key=lambda x: x['emoji_count'], reverse=True)
 with open("tdl-chatlist", "r") as f:
     content = f.readlines()
 
+with open("watched", "r") as f:
+    watched = [f'{line.split(",")[0]}_{line.split(",")[1]}' for line in f.readlines()]
+
 exist_ids = [line.split()[0] for line in content[1:]]
 #print(exist_ids)
 count = 0
@@ -24,7 +27,8 @@ for item in sorted_total:
         print("\033[1;31m",item["item_id"], "is expired!", "\033[0m")
         continue
     file_exist = Path(f'downloads/{item["item_id"]}').glob(f'{item["item_id"]}_{item["id"]}_*')
-    if not (list(file_exist)):
+    watched_exist = f'{item["item_id"]}_{item["id"]}' in watched
+    if not (list(file_exist)) and not watched_exist:
         count += 1
         exist_count[item["item_id"]]=exist_count.get(item["item_id"], 0)+1
         print(exist_count[item["item_id"]], item["item_id"], item["file"], item["emoji_count"])
