@@ -7,13 +7,15 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/go-faster/errors"
 	pw "github.com/jedib0t/go-pretty/v6/progress"
 
-	"github.com/iyear/tdl/pkg/downloader"
+	"github.com/iyear/tdl/core/downloader"
+	"github.com/iyear/tdl/core/util/fsutil"
 	"github.com/iyear/tdl/pkg/prog"
 	"github.com/iyear/tdl/pkg/utils"
 )
@@ -91,12 +93,21 @@ func (p *progress) donePost(elem *iterElem) error {
 		}
 		ext := mime.Extension()
 		if ext != "" && (filepath.Ext(newfile) != ext) {
-			newfile = utils.FS.GetNameWithoutExt(newfile) + ext
+			newfile = fsutil.GetNameWithoutExt(newfile) + ext
 		}
 	}
 
-	if err := os.Rename(elem.to.Name(), filepath.Join(filepath.Dir(elem.to.Name()), newfile)); err != nil {
+	newpath := filepath.Join(filepath.Dir(elem.to.Name()), newfile)
+	if err := os.Rename(elem.to.Name(), newpath); err != nil {
 		return errors.Wrap(err, "rename file")
+	}
+
+	// Set file modification time to message date if available
+	if elem.file.Date > 0 {
+		fileTime := time.Unix(elem.file.Date, 0)
+		if err := os.Chtimes(newpath, fileTime, fileTime); err != nil {
+			return errors.Wrap(err, "set file time")
+		}
 	}
 
 	return nil

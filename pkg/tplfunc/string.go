@@ -4,6 +4,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/flytam/filenamify"
 	"github.com/iancoleman/strcase"
 )
 
@@ -11,6 +12,7 @@ var String = []Func{
 	Repeat(), Replace(),
 	ToUpper(), ToLower(),
 	SnakeCase(), CamelCase(), KebabCase(),
+	Filenamify(),
 }
 
 func Repeat() Func {
@@ -61,6 +63,25 @@ func KebabCase() Func {
 	return func(funcMap template.FuncMap) {
 		funcMap["kebabcase"] = func(s string) string {
 			return strcase.ToKebab(s)
+		}
+	}
+}
+
+func Filenamify() Func {
+	return func(funcMap template.FuncMap) {
+		funcMap["filenamify"] = func(s string, maxLength ...int) string {
+			if len(maxLength) > 1 {
+				return "invalid-MaxLength"
+			}
+			res, err := filenamify.FilenamifyV2(s, func(options *filenamify.Options) {
+				if len(maxLength) > 0 {
+					options.MaxLength = maxLength[0]
+				}
+			})
+			if err != nil || res == "" {
+				return "invalid-filename"
+			}
+			return res
 		}
 	}
 }
