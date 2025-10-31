@@ -27,13 +27,18 @@ sorted_messages = sorted(messages, key=lambda x: x['emoji_count'], reverse=True)
 os.system(f"rm -rf downloads/{id}/.DS_Store")
 os.system(f"rm -rf downloads/{id}/*.tmp")
 files = [int(file.stem.split("_")[1]) for file in Path(f"downloads/{id}").iterdir()]
+
+with open("watched", "r") as f:
+    watched = [int(line.split(',')[1]) for line in f.readlines() if line.split(',')[0]==id]
+
+all_files = files + watched
 reduced_messages = []
 count = 0
 for meg in sorted_messages:
     if 'emoji_count' in meg.keys() and meg['emoji_count'] >= min_reaction:
         #print(meg)
         count += 1
-        if meg['id'] not in files:
+        if meg['id'] not in all_files:
             reduced_messages.append(meg)
     #if count >= min_count:
      #   break
